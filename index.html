@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>MindMirror – Mood Reflection</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  
+  <style>
+      /* Water Ripple Effect */
+    .ripple-background {
+      position: absolute;
+      top: 50%;
+      left: 40%;
+
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+/* Chart container to control size */
+#chart-container {
+  max-width: 100%;
+  width: 37%;
+  height: 400px; /* Set maximum height */
+  overflow: hidden;
+}
+
+/* Ensure the canvas inside the container is responsive */
+#chart-container canvas {
+  max-width: 100%;
+  height: auto;
+}
+
+
+    .ripple-background .ripple {
+      position: absolute;
+      width: 300px;
+      height: 300px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.4);
+      animation: rippleAnimation 7s infinite;
+    }
+
+    @keyframes rippleAnimation {
+      0% {
+        transform: scale(0);
+        opacity: 1;
+      }
+      50% {
+        transform: scale(5);
+        opacity: 0;
+      }
+      100% {
+        transform: scale(0);
+        opacity: 1;
+      }
+    }
+
+ 
+    /* Body and Typography */
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: linear-gradient(to right, #76c7c0, #fef9d7);
+      color: #374151;
+      transition: background-color 0.5s, color 0.5s ease;
+    }
+    h1, h2 {
+      font-family: 'Poppins', sans-serif;
+    }
+    
+    /* Dark Mode */
+    body.dark {
+      background: #121212;
+      color: #e0e0e0;
+    }
+    .dark .bg-white {
+      background-color: #333333;
+    }
+    .dark .text-gray-700 {
+      color: #cccccc;
+    }
+
+    /* Mood Text Color */
+    .mood-text {
+      transition: color 0.3s ease;
+    }
+
+    /* Button and Floating Action Button */
+    button, #floatingButton {
+      background: linear-gradient(to right, #ff5f6d, #ffc3a0);
+      border-radius: 12px;
+      padding: 12px 24px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      transition: background-color 0.3s, transform 0.3s;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    button:hover, #floatingButton:hover {
+      background: linear-gradient(to right, #ff6a00, #ee0979);
+      transform: scale(1.05);
+    }
+
+    /* Slider */
+    input[type="range"] {
+      width: 100%;
+      height: 10px;
+      border-radius: 5px;
+      background: #ddd;
+      transition: background 0.3s ease;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #4facfe;
+      cursor: pointer;
+      transition: background-color 0.3s, transform 0.3s;
+    }
+    input[type="range"]:active::-webkit-slider-thumb {
+      background: #00f2fe;
+      transform: scale(1.3);
+    }
+    
+    /* Mood Log Styling */
+    .mood-log-entry {
+      background-color: white;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      transition: background-color 0.3s ease;
+    }
+    .mood-log-entry:hover {
+      background-color: #f5f5f5;
+    }
+
+    /* Music Suggestions */
+    #music {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #4facfe;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    /* Scrollbar Styling */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background-color: #8884;
+      border-radius: 10px;
+    }
+    
+
+
+    /* Ripple Effect */
+    @keyframes ripple {
+      0% { transform: scale(0.9); opacity: 1; }
+      100% { transform: scale(1.3); opacity: 0; }
+    }
+    .animate-ripple {
+      animation: ripple 3s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen px-4 text-gray-800 transition-colors duration-500">
+  <!-- Water Ripple Effect -->
+  <div class="ripple-background">
+    <div class="ripple"></div>
+    <div class="ripple" style="animation-delay: 2s;"></div>
+    <div class="ripple" style="animation-delay: 4s;"></div>
+  </div>
+  <!-- Heading Bar -->
+  <div class="w-full max-w-sm bg-blue-500 rounded-t-2xl shadow-md py-5 px-6 mb-2 flex items-center justify-center heading-bar">
+    <h1 class="text-4xl font-extrabold text-white select-none">🪞 MindMirror</h1>
+  </div>
+
+  <!-- Quote Frame -->
+  <div class="w-full max-w-sm border-2 border-blue-500 rounded-b-2xl bg-white/95 dark:bg-gray-800/90 p-6 shadow-inner shadow-blue-200 dark:shadow-blue-900 mb-6">
+    <p class="text-lg italic text-gray-700 dark:text-gray-300 text-center leading-relaxed">
+      Reflect your emotions. Track your moods. Gently guide your day 🌤️
+    </p>
+  </div>
+
+  <!-- Mood Slider and Journal -->
+  <div class="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6 space-y-4 text-center transition-colors duration-500">
+    <label for="mood" class="block text-lg font-medium">How do you feel?</label>
+    <input type="range" id="mood" min="0" max="100" value="50" class="w-full accent-blue-500" />
+    <div id="moodLabel" class="text-xl font-semibold mood-text">Neutral</div>
+    <div id="suggestion" class="text-base text-gray-700 italic mt-2">Let's reflect your mood and feel lighter ☀️</div>
+
+    <label for="journal" class="block text-lg font-medium mt-4">Write about your mood:</label>
+    <textarea id="journal" rows="4" placeholder="Share your thoughts here..." class="w-full rounded-xl border border-gray-300 p-3 resize-none focus:outline-none focus:ring-2 focus:ring-blue-400 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 transition-colors"></textarea>
+
+    <div id="music" class="text-sm text-blue-700 underline mt-2 cursor-pointer hidden" target="_blank"></div>
+    <iframe id="spotifyPlayer" class="hidden w-full mt-2 rounded-xl" width="100%" height="80" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>
+
+    <button id="reflectButton" class="w-full py-2 px-4 bg-blue-500 text-white font-semibold rounded-xl hover:bg-blue-600 transition">
+      Reflect Mood
+    </button>
+  </div>
+
+  <!-- Reminder and Dark Mode -->
+  <div class="flex items-center justify-between mt-4 max-w-sm w-full">
+    <label for="reminderToggle" class="text-sm text-gray-700 font-medium">🔔 Remind me daily</label>
+    <input type="checkbox" id="reminderToggle" class="w-5 h-5 accent-blue-500" />
+  </div>
+
+  <!-- Dark Mode Toggle -->
+  <div class="flex items-center justify-between mt-2 max-w-sm w-full">
+    <label for="darkModeToggle" class="text-sm font-medium cursor-pointer select-none">🌓 Dark Mode</label>
+    <input type="checkbox" id="darkModeToggle" class="w-5 h-5 accent-blue-500" />
+  </div>
+
+  <!-- Mirror and Ripple Animation -->
+  <div class="relative mt-10 w-48 h-48 rounded-full bg-gradient-to-br from-blue-200 to-purple-300 shadow-2xl overflow-hidden transition-colors duration-500" id="mirror">
+    <div class="absolute w-full h-full rounded-full animate-ripple bg-white/30"></div>
+  </div>
+
+  <!-- Mood Log -->
+  <div class="mt-10 w-full max-w-md">
+    <h2 class="text-xl font-bold mb-2">🕓 Mood Log</h2>
+    <div id="logContainer" class="space-y-2 max-h-64 overflow-y-auto pr-2"></div>
+    <button onclick="clearLog()" class="text-red-500 text-sm mt-2 underline">🗑️ Clear Mood Log</button>
+  </div>
+  <!-- Mood Insights Section -->
+<div id="chart-container" class="mt-10 w-full max-w-md">
+  <h2 class="text-xl font-bold mb-2">📊 Mood Insights</h2>
+  <canvas id="moodChart" width="500" height="300"></canvas>
+</div>
+
+
+  <!-- Floating Button -->
+  <button id="floatingButton" onclick="saveMood()" class="fixed bottom-5 right-5 bg-blue-500 text-white p-4 rounded-full shadow-lg hover:bg-blue-600 transition">
+    Reflect Mood
+  </button>
+
+  <script>
+    const moodInput = document.getElementById("mood");
+    const moodLabel = document.getElementById("moodLabel");
+    const suggestion = document.getElementById("suggestion");
+    const reminderToggle = document.getElementById("reminderToggle");
+    const journalInput = document.getElementById("journal");
+    const musicEl = document.getElementById("music");
+    const spotifyPlayer = document.getElementById("spotifyPlayer");
+    const darkModeToggle = document.getElementById("darkModeToggle");
+    const body = document.body;
+
+    // Load reminder setting
+    const reminderEnabled = localStorage.getItem("remindDaily") === "true";
+    reminderToggle.checked = reminderEnabled;
+    reminderToggle.addEventListener("change", () => {
+      localStorage.setItem("remindDaily", reminderToggle.checked);
+    });
+
+    // Load dark mode preference
+    const darkModeEnabled = localStorage.getItem("darkMode") === "true";
+    darkModeToggle.checked = darkModeEnabled;
+    setDarkMode(darkModeEnabled);
+    darkModeToggle.addEventListener("change", () => {
+      setDarkMode(darkModeToggle.checked);
+      localStorage.setItem("darkMode", darkModeToggle.checked);
+    });
+
+    function setDarkMode(enabled) {
+      if (enabled) {
+        body.classList.add("dark");
+      } else {
+        body.classList.remove("dark");
+      }
+    }
+
+    function getMoodText(val) {
+      if (val < 20) return "😢 Very Sad";
+      if (val < 40) return "😟 Sad";
+      if (val < 60) return "😐 Neutral";
+      if (val < 80) return "😊 Happy";
+      return "😁 Very Happy";
+    }
+
+    function getSuggestion(val) {
+      if (val < 20) return "Try deep breathing. 💨 Maybe a soft lo-fi track?";
+      if (val < 40) return "Call a friend or write down your thoughts. ☎️";
+      if (val < 60) return "Take a short walk or enjoy a tea. 🍵";
+      if (val < 80) return "Perfect time to create something or dance! 🕺";
+      return "You're glowing! Spread kindness today. 🌟";
+    }
+
+    function getMusicLink(val) {
+      if (val < 20)
+        return {
+          text: "Soothing Piano for Sad Days 🎹",
+          url: "https://open.spotify.com/playlist/37i9dQZF1DWVFeEut75IAL",
+        };
+      if (val < 40)
+        return {
+          text: "Lo-Fi Chill Beats 🌙",
+          url: "https://open.spotify.com/playlist/37i9dQZF1DX6VdMW310YC7",
+        };
+      if (val < 60)
+        return {
+          text: "Calm Vibes & Focus ☕",
+          url: "https://open.spotify.com/playlist/37i9dQZF1DX3Ogo9pFvBkY",
+        };
+      if (val < 80)
+        return {
+          text: "Happy Indie Morning 🎈",
+          url: "https://open.spotify.com/playlist/37i9dQZF1DXdPec7aLTmlC",
+        };
+      return {
+        text: "Energizing Pop & Power Mood 🔥",
+        url: "https://open.spotify.com/playlist/37i9dQZF1DX1g0iEXLFycr",
+      };
+    }
+
+    function extractPlaylistID(url) {
+      const match = url.match(/playlist\/([a-zA-Z0-9]+)/);
+      return match ? match[1] : "";
+    }
+
+    function getBackgroundFromMood(val) {
+      if (val < 20) return "#2b5876";
+      if (val < 40) return "#2575fc";
+      if (val < 60) return "#fef9d7";
+      if (val < 80) return "#c1dfc4";
+      return "#fbc2eb";
+    }
+
+    function getMirrorColor(val) {
+      if (val < 20) return ["#2b5876", "#4e4376"];
+      if (val < 40) return ["#36d1dc", "#5b86e5"];
+      if (val < 60) return ["#fef9d7", "#d299c2"];
+      if (val < 80) return ["#c1dfc4", "#deecdd"];
+      return ["#fbc2eb", "#a6c1ee"];
+    }
+
+    function updateMirror(val) {
+      const mirror = document.getElementById("mirror");
+      const [start, end] = getMirrorColor(val);
+      mirror.style.background = `linear-gradient(to bottom right, ${start}, ${end})`;
+
+      // Update ripple animation speed based on mood
+      const mirrorRipple = mirror.querySelector("div");
+      if (val < 20) {
+        mirrorRipple.style.animationDuration = "4.5s";
+      } else if (val < 40) {
+        mirrorRipple.style.animationDuration = "3.5s";
+      } else if (val < 60) {
+        mirrorRipple.style.animationDuration = "3s";
+      } else if (val < 80) {
+        mirrorRipple.style.animationDuration = "2s";
+      } else {
+        mirrorRipple.style.animationDuration = "1.5s";
+      }
+    }
+
+    // Add event listener to the mood slider for real-time updates
+    moodInput.addEventListener('input', () => {
+      const value = moodInput.value;
+      const moodText = getMoodText(value);
+      const suggestionText = getSuggestion(value);
+
+      moodLabel.textContent = moodText;
+      suggestion.textContent = suggestionText;
+
+      // Change background color
+      if (!darkModeToggle.checked) {
+        document.body.style.background = getBackgroundFromMood(value);
+      } else {
+        document.body.style.background = ""; // Fallback for dark mode
+      }
+
+      // Update the mirror with color
+      updateMirror(value);
+
+      // Handle music link dynamically
+      const music = getMusicLink(value);
+      if (music) {
+        musicEl.textContent = "🎧 " + music.text;
+        musicEl.onclick = () => window.open(music.url, "_blank");
+        musicEl.classList.remove("hidden");
+
+        spotifyPlayer.src = `https://open.spotify.com/embed/playlist/${extractPlaylistID(music.url)}`;
+        spotifyPlayer.classList.remove("hidden");
+      } else {
+        spotifyPlayer.classList.add("hidden");
+        musicEl.classList.add("hidden");
+      }
+    });
+
+function saveMood() {
+  const value = moodInput.value;
+  const moodText = getMoodText(value);
+  const music = getMusicLink(value);
+
+  moodLabel.textContent = moodText;
+  suggestion.textContent = getSuggestion(value);
+
+  // Update background color
+  if (!darkModeToggle.checked) {
+    document.body.style.background = getBackgroundFromMood(value);
+  } else {
+    document.body.style.background = ""; // Fallback for dark mode
+  }
+  updateMirror(value);
+
+  // Handle music link
+  if (music) {
+    musicEl.textContent = "🎧 " + music.text;
+    musicEl.onclick = () => window.open(music.url, "_blank");
+    musicEl.classList.remove("hidden");
+
+    // Embed the Spotify playlist
+    const playlistId = extractPlaylistID(music.url);
+    spotifyPlayer.src = `https://open.spotify.com/embed/playlist/${playlistId}`;
+    spotifyPlayer.classList.remove("hidden");
+  } else {
+    spotifyPlayer.classList.add("hidden");
+    musicEl.classList.add("hidden");
+  }
+
+  const journalText = journalInput.value;
+  const moodLog = JSON.parse(localStorage.getItem("moodLog")) || [];
+  const entry = {
+    value: value,
+    music: music ? music.text : null,
+    journal: journalText,
+    time: new Date().toLocaleString(),
+  };
+  moodLog.push(entry);
+  localStorage.setItem("moodLog", JSON.stringify(moodLog));
+
+  journalInput.value = "";
+  showMoodLog();
+
+  // Update chart with the new mood log
+  updateChart(); // Call the function to update the chart
+}
+
+
+    const reflectButton = document.getElementById("reflectButton");
+    reflectButton.addEventListener("click", saveMood);
+
+    function showMoodLog() {
+      const container = document.getElementById("logContainer");
+      const history = JSON.parse(localStorage.getItem("moodLog")) || [];
+      container.innerHTML = "";
+      history.slice().reverse().forEach((entry) => {
+        const div = document.createElement("div");
+        div.className = "p-3 bg-white rounded-xl shadow text-sm flex flex-col transition-colors duration-500 dark:bg-gray-700 mood-log-entry";
+        div.innerHTML = `<div class='flex justify-between'><span class='font-medium'>${getMoodText(entry.value)}</span><span class="text-gray-500 dark:text-gray-400">${entry.time}</span></div>`;
+        if (entry.music) {
+          const musicText = document.createElement("div");
+          musicText.className = "text-xs text-blue-500 italic dark:text-blue-400";
+          musicText.textContent = `🎶 ${entry.music}`;
+          div.appendChild(musicText);
+        }
+        if (entry.journal) {
+          const journalText = document.createElement("div");
+          journalText.className = "mt-1 text-gray-700 dark:text-gray-300 whitespace-pre-wrap";
+          journalText.textContent = entry.journal;
+          div.appendChild(journalText);
+        }
+        container.appendChild(div);
+      });
+    }
+
+    function clearLog() {
+      localStorage.removeItem("moodLog");
+      showMoodLog();
+    }
+
+    showMoodLog();
+    updateMirror(moodInput.value);
+    // Variables to store mood history and chart
+const moodChartCanvas = document.getElementById('moodChart');
+let moodChart;
+const moodHistory = JSON.parse(localStorage.getItem("moodLog")) || [];
+const moodData = moodHistory.map(entry => entry.value);
+const moodLabels = moodHistory.map(entry => entry.time);
+
+// Initialize the chart
+function initializeChart() {
+  if (!moodChart) {
+    moodChart = new Chart(moodChartCanvas, {
+      type: 'line',
+      data: {
+        labels: moodLabels,
+        datasets: [{
+          label: 'Mood Over Time',
+          data: moodData,
+          borderColor: 'rgba(75, 192, 192, 1)', // Line color
+          fill: false,
+        }]
+      },
+      options: {
+        scales: {
+          x: {
+            title: {
+              display: true,
+              text: 'Date'
+            },
+            ticks: {
+              maxRotation: 90, // Make sure labels don't overlap
+              minRotation: 45
+            }
+          },
+          y: {
+            title: {
+              display: true,
+              text: 'Mood'
+            }
+          }
+        },
+        responsive: true,
+        maintainAspectRatio: false,
+      }
+    });
+  } else {
+    // If chart already exists, update it
+    updateChart();
+  }
+}
+
+// Update the chart with the latest mood data
+function updateChart() {
+  const updatedHistory = JSON.parse(localStorage.getItem("moodLog")) || [];
+  const updatedMoodData = updatedHistory.map(entry => entry.value);
+  const updatedMoodLabels = updatedHistory.map(entry => entry.time);
+  
+  moodChart.data.labels = updatedMoodLabels;
+  moodChart.data.datasets[0].data = updatedMoodData;
+  moodChart.update();
+}
+
+// Initialize the chart when the page loads
+initializeChart();
+
+
+  </script>
+</body>
+</html>
